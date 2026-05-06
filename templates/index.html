@@ -4,48 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RecruitAI — Intelligent Resume Screening</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* ── LIGHT MODE VARIABLES ── */
+        /* ── DARK MODE VARIABLES ── */
         :root {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --surface2: #f1f5f9;
-            --border: #e2e8f0;
-            --border-md: #cbd5e1;
-            
+            --bg: #09090b;
+            --surface: rgba(24, 24, 27, 0.7);
+            --surface-hover: rgba(39, 39, 42, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
             --accent: #10b981;
             --accent2: #6366f1;
-            --accent-glow: rgba(16, 185, 129, 0.1);
+            --accent-glow: rgba(16, 185, 129, 0.15);
             --amber: #f59e0b;
             --red: #ef4444;
             
-            --text: #0f172a;
-            --muted: #475569;
-            --muted2: #94a3b8;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #52525b;
             
-            --shadow-card: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 10px 15px -3px rgba(0, 0, 0, 0.04);
-            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --radius-lg: 24px;
+            --radius-md: 12px;
         }
         
         html { scroll-behavior: smooth; }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
 
-        /* Subtle Light Grid Texture */
+        /* Subtle grid background */
         body::before {
             content: '';
             position: fixed; inset: 0; pointer-events: none; z-index: 0;
-            background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
             background-size: 60px 60px;
         }
 
-        /* Ambient Orbs adjusted for Light Mode */
-        .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
-        .orb1 { width: 600px; height: 600px; background: rgba(16, 185, 129, 0.15); top: -200px; right: -150px; animation: f1 18s ease-in-out infinite; }
-        .orb2 { width: 500px; height: 500px; background: rgba(99, 102, 241, 0.15); bottom: -150px; left: -100px; animation: f2 22s ease-in-out infinite; }
+        /* Ambient Orbs */
+        .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; opacity: 0.15; }
+        .orb1 { width: 600px; height: 600px; background: var(--accent); top: -200px; right: -150px; animation: f1 18s ease-in-out infinite; }
+        .orb2 { width: 500px; height: 500px; background: var(--accent2); bottom: -150px; left: -100px; animation: f2 22s ease-in-out infinite; }
         @keyframes f1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-50px,60px)} }
         @keyframes f2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(60px,-50px)} }
 
@@ -53,74 +51,74 @@
             position: sticky; top: 0; z-index: 200;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 2.5rem; height: 68px;
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px);
+            background: rgba(9, 9, 11, 0.7); backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
             animation: slideDown 0.5s ease both;
         }
         @keyframes slideDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:none} }
-        .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); letter-spacing: -0.03em; }
+        .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-main); letter-spacing: -0.03em; }
         .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pip 2.5s ease-in-out infinite; box-shadow: 0 0 10px var(--accent); }
         @keyframes pip { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:0.6} }
         .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-a { font-size: 0.88rem; font-weight: 500; color: var(--muted); text-decoration: none; padding: 0.4rem 0.85rem; border-radius: 8px; transition: color 0.18s, background 0.18s; }
-        .nav-a:hover { color: var(--text); background: var(--surface2); }
-        .nav-btn { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; color: #ffffff; background: var(--text); border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; text-decoration: none; transition: background 0.2s, transform 0.15s, box-shadow 0.2s; letter-spacing: 0.01em; box-shadow: var(--shadow-sm); }
-        .nav-btn:hover { background: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .nav-a { font-size: 0.88rem; font-weight: 500; color: var(--text-muted); text-decoration: none; padding: 0.4rem 0.85rem; border-radius: 8px; transition: color 0.18s, background 0.18s; }
+        .nav-a:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.05); }
+        .nav-btn { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; color: var(--bg); background: var(--text-main); border: none; padding: 0.55rem 1.25rem; border-radius: 8px; cursor: pointer; text-decoration: none; transition: background 0.2s, transform 0.15s; letter-spacing: 0.01em; }
+        .nav-btn:hover { background: var(--accent); transform: translateY(-1px); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
 
         .hero { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 5rem 2rem 2.5rem; text-align: center; }
-        .badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-glow); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 100px; padding: 0.4rem 1.1rem; font-size: 0.75rem; font-weight: 600; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem; animation: up 0.5s 0.1s ease both; box-shadow: var(--shadow-sm); }
+        .badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-glow); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 100px; padding: 0.4rem 1.1rem; font-size: 0.75rem; font-weight: 600; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem; animation: up 0.5s 0.1s ease both; }
         .badge-d { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
         @keyframes up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
 
-        h1 { font-family: 'Syne', sans-serif; font-size: clamp(2.6rem, 7vw, 4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 1.25rem; animation: up 0.5s 0.18s ease both; color: var(--text); }
+        h1 { font-family: 'Syne', sans-serif; font-size: clamp(2.6rem, 7vw, 4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 1.25rem; animation: up 0.5s 0.18s ease both; color: var(--text-main); }
         .hl { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .sub { font-size: 1.1rem; color: var(--muted); line-height: 1.7; max-width: 520px; margin: 0 auto 3rem; font-weight: 400; animation: up 0.5s 0.26s ease both; }
+        .sub { font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; max-width: 520px; margin: 0 auto 3rem; font-weight: 400; animation: up 0.5s 0.26s ease both; }
 
         .fw { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 2rem 5rem; animation: up 0.6s 0.32s ease both; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 2.5rem; box-shadow: var(--shadow-card); position: relative; overflow: hidden; }
+        .card { background: var(--surface); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 24px; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); }
 
         .field { margin-bottom: 1.5rem; }
-        label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.6rem; }
+        label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.6rem; }
         textarea, input[type=text], select {
-            width: 100%; background: var(--surface); border: 1px solid var(--border-md); border-radius: 12px;
-            color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px;
+            color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
             padding: 0.85rem 1.05rem; outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
         }
+        select option { background: var(--bg); color: var(--text-main); }
         textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
-        textarea:focus, input[type=text]:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        textarea::placeholder, input::placeholder { color: var(--muted2); font-weight: 400; }
+        textarea:focus, input[type=text]:focus, select:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px var(--accent-glow); }
+        textarea::placeholder, input::placeholder { color: var(--text-dim); font-weight: 400; }
 
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
         @media(max-width:540px){ .row2{ grid-template-columns:1fr } }
 
-        .drop { border: 2px dashed var(--border-md); border-radius: 14px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; position: relative; background: var(--surface2); transition: all 0.2s ease; }
-        .drop:hover { border-color: var(--accent); background: var(--surface); box-shadow: var(--shadow-sm); }
-        .drop.ok { border-color: var(--accent); background: #f0fdf4; border-style: solid; }
+        .drop { border: 2px dashed rgba(255,255,255,0.15); border-radius: 14px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; position: relative; background: rgba(0,0,0,0.1); transition: all 0.2s ease; }
+        .drop:hover { border-color: var(--accent); background: rgba(0,0,0,0.3); }
+        .drop.ok { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); border-style: solid; }
         .drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
         .drop-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--accent-glow); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; }
         .drop-icon svg { width: 24px; height: 24px; color: var(--accent); }
-        .drop-t { font-size: 0.95rem; color: var(--muted); font-weight: 500; }
+        .drop-t { font-size: 0.95rem; color: var(--text-muted); font-weight: 500; }
         .drop-t strong { color: var(--accent); font-weight: 700; }
-        .drop-h { font-size: 0.8rem; color: var(--muted2); margin-top: 6px; }
-        .drop-fn { font-size: 0.85rem; color: #059669; font-weight: 600; margin-top: 10px; display: none; background: #d1fae5; padding: 4px 10px; border-radius: 6px; display: inline-block; }
+        .drop-h { font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; }
+        .drop-fn { font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-top: 10px; display: none; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 6px; display: inline-block; }
 
-        .sbtn { width: 100%; padding: 1rem; background: var(--text); color: var(--surface); border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: background 0.2s, transform 0.15s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -0.01em; margin-top: 1rem; box-shadow: var(--shadow-sm); }
-        .sbtn:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25); color: white; }
+        .sbtn { width: 100%; padding: 1rem; background: var(--text-main); color: var(--bg); border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: background 0.2s, transform 0.15s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -0.01em; margin-top: 1rem; }
+        .sbtn:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 10px 20px -10px var(--accent); color: white; }
         .sbtn:active { transform: translateY(0); }
-        .sbtn.loading { opacity: 0.7; pointer-events: none; background: var(--muted); }
+        .sbtn.loading { opacity: 0.7; pointer-events: none; background: var(--text-dim); color: var(--text-muted); }
 
         .feats { position: relative; z-index: 1; max-width: 840px; margin: 0 auto; padding: 0 2rem 6rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; animation: up 0.7s 0.5s ease both; }
-        .feat { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; box-shadow: var(--shadow-sm); }
-        .feat:hover { transform: translateY(-5px); border-color: var(--border-md); box-shadow: var(--shadow-card); }
+        .feat { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; backdrop-filter: blur(12px); transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+        .feat:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
         .fi { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; font-size: 1.25rem; }
         .feat:nth-child(1) .fi { background: rgba(16, 185, 129, 0.15); }
         .feat:nth-child(2) .fi { background: rgba(99, 102, 241, 0.15); }
         .feat:nth-child(3) .fi { background: rgba(245, 158, 11, 0.15); }
-        .ft { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; color: var(--text); }
-        .fd { font-size: 0.85rem; color: var(--muted); line-height: 1.6; font-weight: 400; }
+        .ft { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; color: var(--text-main); }
+        .fd { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; font-weight: 400; }
 
         @media(max-width:768px){ .feats{grid-template-columns:1fr} nav{padding:0 1.5rem} .hero,.fw{padding-left:1.5rem;padding-right:1.5rem} .card{padding:1.75rem 1.5rem} }
     </style>
