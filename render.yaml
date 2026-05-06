@@ -4,7 +4,7 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: "pip install -r requirements.txt && python -m spacy download en_core_web_sm"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn App:app --bind 0.0.0.0:$PORT --workers 1 --timeout 180"
     envVars:
       - key: PYTHON_VERSION

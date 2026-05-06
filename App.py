@@ -70,22 +70,10 @@ login_manager.login_view = 'login'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-with app.app_context():
-    db.create_all()
-
 
 # Lazy-load heavy models once (avoids startup slowdown)
-@lru_cache(maxsize=1)
-def get_nlp():
-    logger.info("Loading spaCy model (en_core_web_sm)...")
-    import spacy
-    return spacy.load('en_core_web_sm')
-
-@lru_cache(maxsize=1)
-def get_embedding_model():
-    logger.info("Loading SentenceTransformer model (all-MiniLM-L6-v2)...")
-    from sentence_transformers import SentenceTransformer
-    return SentenceTransformer('all-MiniLM-L6-v2')
+# Heavy local models removed to stay within Render Free Tier memory limits.
+# We now use the Gemini API for all parsing and scoring.
 
 
 # ─────────────────────────────────────────────
@@ -193,83 +181,65 @@ SKILLS_DB = [
 ]
 
 
-def extract_skills_from_text(text: str) -> list:
-    nlp = get_nlp()
-    doc = nlp(text.lower())
-    clean = " ".join(t.text for t in doc if not t.is_stop and not t.is_punct)
-    return [skill.title() for skill in SKILLS_DB if skill in clean]
-
-
-def calculate_similarity(resume_text: str, job_description: str) -> float:
-    from sentence_transformers import util
-    model = get_embedding_model()
-    res_emb = model.encode(resume_text, convert_to_tensor=True)
-    jd_emb  = model.encode(job_description, convert_to_tensor=True)
-    score = util.cos_sim(res_emb, jd_emb).item() * 100
-    return round(max(0.0, min(score, 100.0)), 2)   # clamp to [0, 100]
-
-
-def extract_contact_info(text: str) -> tuple:
-    """Return (email, phone) extracted from resume text."""
-    text = text.replace("\n", " ").replace("\t", " ")
-
-    email = "Not Found"
-
-    # Strategy 1: Look for email after common labels like "Email:", "E-mail ID:" etc.
-    # This is the most reliable because it anchors on the label.
-    labeled = re.search(
-        r'(?:e[\-\s]?mail(?:\s*(?:id|address))?|e[\-\s]?id|mail\s*id)'
-        r'\s*[:;\-\s]\s*'
-        r'([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})',
-        text, re.IGNORECASE
-    )
-    if labeled:
-        email = labeled.group(1).strip()
-    else:
-        # Strategy 2: General regex — find anything with @
-        # Note: PDF icon fonts (e.g. ✉) may extract as junk chars prepended
-        # to the email. HR can fix this using the edit button on the dashboard.
-        general = re.search(
-            r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}',
-            text
-        )
-        if general:
-            email = general.group(0).strip()
-
-
-
-    phone_match = re.search(
-        r'\b(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}\b',
-        text
-    )
-
-    phone = phone_match.group(0).strip() if phone_match else "Not Found"
-    return email, phone
-
-
-def extract_name(text: str) -> str:
+def analyze_resume_with_gemini(resume_text: str, job_description: str) -> dict:
     """
-    Heuristic: scan first 5 non-empty lines for a 2–4 word title-cased name.
-    Falls back to spaCy PERSON NER, then 'Unknown'.
+    Use Gemini AI to parse the resume and match it against the job description.
+    Returns a dictionary with name, email, phone, skills, match_score, and missing_skills.
     """
-    lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
+    api_key = app.config.get('GEMINI_API_KEY', '')
+    if not api_key:
+        logger.error("GEMINI_API_KEY not found during analysis.")
+        return None
 
-    for line in lines[:5]:
-        words = line.split()
-        if 2 <= len(words) <= 4 and all(w[0].isupper() for w in words if w.isalpha()):
-            skip_keywords = {'resume', 'cv', 'curriculum', 'profile', 'summary', 'vitae'}
-            if not any(kw in line.lower() for kw in skip_keywords):
-                return line
+    prompt = f"""
+    You are an expert HR Recruitment AI. Analyze the following resume text and compare it with the job description.
+    
+    RESUME TEXT:
+    {resume_text}
+    
+    JOB DESCRIPTION:
+    {job_description}
+    
+    Extract the following information and return it STRICTLY as a JSON object:
+    {{
+        "name": "Full name of candidate",
+        "email": "Email address",
+        "phone": "Phone number",
+        "found_skills": ["List", "of", "skills", "found", "in", "resume"],
+        "missing_skills": ["List", "of", "important", "skills", "from", "JD", "missing", "in", "resume"],
+        "match_score": 85.5,
+        "explanation": "Briefly explain why this score was given"
+    }}
+    
+    Rules:
+    - If Name/Email/Phone is not found, use "Not Found".
+    - match_score should be a number between 0 and 100.
+    - found_skills and missing_skills should be arrays of strings.
+    - Return ONLY the JSON object. No other text.
+    """
 
-    # spaCy NER fallback — only parse top portion for speed
-    nlp = get_nlp()
-    doc = nlp(text[:1000])
-    for ent in doc.ents:
-        if ent.label_ == "PERSON":
-            return ent.text.strip()
-
-    return "Unknown"
-
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}]
+        }
+        resp = http_requests.post(url, json=payload, timeout=30)
+        resp.raise_for_status()
+        result = resp.json()
+        
+        raw_text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '').strip()
+        
+        # Strip potential markdown code blocks
+        if raw_text.startswith("```json"):
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif raw_text.startswith("```"):
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
+            
+        import json
+        return json.loads(raw_text)
+    except Exception as e:
+        logger.error("Gemini analysis error: %s", e)
+        return None
 
 # ─────────────────────────────────────────────
 # HELPERS — EMAIL
@@ -420,12 +390,24 @@ def upload_resume():
             flash('Could not extract text from the file. Please try a different file.', 'danger')
             return redirect(url_for('home'))
 
-        name             = extract_name(resume_text)
-        email, phone     = extract_contact_info(resume_text)
-        found_skills     = extract_skills_from_text(resume_text)
-        jd_skills        = extract_skills_from_text(job_description)
-        missing_skills   = sorted(set(jd_skills) - set(found_skills))
-        match_percentage = calculate_similarity(resume_text, job_description)
+        # AI Analysis via Gemini (Lighter and Better)
+        analysis = analyze_resume_with_gemini(resume_text, job_description)
+        
+        if analysis:
+            name             = analysis.get('name', 'Unknown')
+            email            = analysis.get('email', 'Not Found')
+            phone            = analysis.get('phone', 'Not Found')
+            found_skills     = analysis.get('found_skills', [])
+            missing_skills   = analysis.get('missing_skills', [])
+            match_percentage = analysis.get('match_score', 0.0)
+        else:
+            # Minimal fallback if Gemini fails
+            name             = "Candidate"
+            email            = "Not Found"
+            phone            = "Not Found"
+            found_skills     = []
+            missing_skills   = []
+            match_percentage = 0.0
 
         # Auto-determine initial status from score threshold
         if match_percentage >= Config.SCORE_HIGH:
