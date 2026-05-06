@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecruitAI — Register</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+font-family:'DM Sans',sans-serif;
+background:linear-gradient(135deg,#eef2ff,#f8fafc);
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+/* CARD */
+.card{
+width:380px;
+background:white;
+padding:30px;
+border-radius:16px;
+box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* TITLE */
+h2{
+font-family:'Syne';
+font-weight:800;
+text-align:center;
+margin-bottom:20px;
+}
+
+/* INPUT */
+input{
+width:100%;
+padding:12px;
+margin:10px 0;
+border-radius:10px;
+border:1px solid #ddd;
+outline:none;
+font-size:14px;
+}
+
+input:focus{
+border-color:#4f46e5;
+box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+}
+
+/* BUTTON */
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:linear-gradient(135deg,#4f46e5,#6366f1);
+color:white;
+font-weight:600;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+opacity:0.9;
+}
+
+/* FLASH */
+.flash{
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
+font-size:14px;
+}
+
+.success{background:#ecfdf5;color:#16a34a;}
+.danger{background:#fef2f2;color:#dc2626;}
+
+.link{
+text-align:center;
+margin-top:10px;
+font-size:14px;
+}
+
+.link a{
+color:#4f46e5;
+text-decoration:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>RecruitAI Register</h2>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<div class="flash {{ category }}">{{ message }}</div>
+{% endfor %}
+{% endwith %}
+
+<form method="POST">
+<input type="text" name="username" placeholder="Enter Username" required>
+<input type="password" name="password" placeholder="Enter Password" required>
+<button type="submit">Create Account →</button>
+</form>
+
+<div class="link">
+Already have an account? <a href="/login">Login</a>
+</div>
+
+</div>
+
+</body>
+</html>

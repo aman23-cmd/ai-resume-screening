@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecruitAI — HR Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* ── LIGHT MODE VARIABLES ── */
+        :root {
+            --bg: #f8fafc; /* Light gray-blue background */
+            --surface: #ffffff; /* Pure white for cards */
+            --surface2: #f1f5f9; /* Slightly darker for inputs/table headers */
+            --surface3: #e2e8f0; /* Borders and dividers */
+            --border: #e2e8f0; 
+            --border-md: #cbd5e1;
+            
+            /* Accents modified for better contrast on white */
+            --accent: #10b981; /* Emerald green */
+            --accent2: #6366f1; /* Indigo */
+            --accent-glow: rgba(16, 185, 129, 0.1);
+            --amber: #f59e0b; 
+            --red: #ef4444; 
+            --blue: #3b82f6;
+            
+            --text: #0f172a; /* Slate 900 for high-contrast main text */
+            --muted: #475569; /* Slate 600 for secondary text */
+            --muted2: #94a3b8; /* Slate 400 for placeholders/minor text */
+            
+            /* Shadows for depth */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+        
+        /* Subtle grid background for light mode */
+        body::before {
+            content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+            background-image: linear-gradient(rgba(0,0,0,0.03) 1px,transparent 1px),
+                              linear-gradient(90deg,rgba(0,0,0,0.03) 1px,transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar { width: 230px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 10; animation: slideLeft 0.4s ease both; }
+        @keyframes slideLeft { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:none} }
+        .s-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.04em; display: flex; align-items: center; gap: 9px; margin-bottom: 2.5rem; padding: 0 0.5rem; text-decoration: none; color: var(--text); }
+        .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pip 2.5s ease-in-out infinite; box-shadow: 0 0 8px var(--accent); }
+        @keyframes pip { 0%,100%{transform:scale(1)} 50%{transform:scale(1.6);opacity:0.6} }
+        .s-sec { font-size: 0.62rem; font-weight: 600; color: var(--muted2); letter-spacing: 0.12em; text-transform: uppercase; padding: 0 0.5rem; margin-bottom: 0.5rem; margin-top: 1.25rem; }
+        .s-link { display: flex; align-items: center; gap: 10px; padding: 0.58rem 0.75rem; border-radius: 10px; font-size: 0.88rem; font-weight: 500; color: var(--muted); text-decoration: none; transition: background 0.15s, color 0.15s; margin-bottom: 2px; }
+        .s-link:hover { background: var(--surface2); color: var(--text); }
+        .s-link.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; border: 1px solid rgba(16,185,129,0.15); }
+        .s-icon { font-size: 1rem; width: 20px; text-align: center; }
+        .s-bottom { margin-top: auto; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+        .s-badge { background: var(--accent-glow); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.75rem; color: var(--accent); line-height: 1.5; }
+        .s-badge strong { display: block; font-family: 'Syne', sans-serif; font-size: 0.8rem; margin-bottom: 2px; color: var(--text); }
+
+        /* ── MAIN ── */
+        .main { flex: 1; overflow: auto; min-width: 0; position: relative; z-index: 1; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 68px; background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; animation: slideDown 0.4s ease both; gap: 1rem; }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
+        .tb-l h1 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; white-space: nowrap; color: var(--text); }
+        .tb-l p { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+        .tb-r { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .search { background: var(--surface); border: 1px solid var(--border-md); border-radius: 9px; padding: 0.55rem 1rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; width: 220px; transition: border-color 0.2s, box-shadow 0.2s; box-shadow: var(--shadow-sm); }
+        .search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .search::placeholder { color: var(--muted2); }
+        .cta { padding: 0.6rem 1.2rem; background: var(--text); color: var(--surface); border: none; border-radius: 9px; font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background 0.2s, transform 0.15s, box-shadow 0.2s; box-shadow: var(--shadow-sm); }
+        .cta:hover { background: var(--accent); color: white; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .filter-sel { background: var(--surface); border: 1px solid var(--border-md); border-radius: 8px; padding: 0.55rem 0.8rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; outline: none; cursor: pointer; box-shadow: var(--shadow-sm); }
+        .filter-sel:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+        .content { padding: 1.75rem 2rem; }
+
+        /* Flash messages */
+        .flash { padding: 0.8rem 1rem; margin-bottom: 1.25rem; border-radius: 10px; font-size: 0.85rem; font-weight: 500; border: 1px solid; }
+        .flash.success { background: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+        .flash.danger  { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+        .flash.warning { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+        .flash.info    { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+
+        /* ── STAT CARDS ── */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; animation: up 0.5s 0.1s ease both; }
+        @keyframes up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+        .sc { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; position: relative; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: default; box-shadow: var(--shadow-sm); }
+        .sc:hover { transform: translateY(-3px); border-color: var(--border-md); box-shadow: var(--shadow-md); }
+        .sc-accent { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .sc1 .sc-accent { background: var(--accent2); }
+        .sc2 .sc-accent { background: var(--accent); }
+        .sc3 .sc-accent { background: var(--amber); }
+        .sc4 .sc-accent { background: var(--red); }
+        .sc5 .sc-accent { background: var(--blue); }
+        .sc-l { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; letter-spacing: 0.02em; text-transform: uppercase; }
+        .sc-v { font-family: 'Syne', sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--text); }
+        .sc-s { font-size: 0.72rem; color: var(--muted2); margin-top: 6px; font-weight: 500; }
+
+        /* ── CHART ROW ── */
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 1rem; margin-bottom: 1.5rem; animation: up 0.5s 0.2s ease both; }
+        .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; box-shadow: var(--shadow-sm); }
+        .ch-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; color: var(--text); display: flex; justify-content: space-between; align-items: baseline; }
+        .ch-sub { font-size: 0.75rem; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 500; }
+        canvas { max-height: 180px; }
+
+        /* Skill bar */
+        .skill-bars { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+        .skrow { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 500; }
+        .sklabel { min-width: 85px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sktrack { flex: 1; height: 6px; background: var(--surface2); border-radius: 4px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
+        .skfill { height: 100%; border-radius: 4px; transition: width 1.2s cubic-bezier(.4,0,.2,1); width: 0; }
+        .skcount { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--muted); min-width: 24px; text-align: right; }
+
+        /* ── TABLE ── */
+        .tcard { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; animation: up 0.5s 0.3s ease both; box-shadow: var(--shadow-sm); }
+        .thead-row { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #ffffff; }
+        .thead-row h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+        .thead-row span { font-size: 0.78rem; font-weight: 500; color: var(--muted); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { padding: 0.8rem 1.5rem; text-align: left; font-size: 0.72rem; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; background: var(--surface2); border-bottom: 1px solid var(--border-md); }
+        td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.15s; animation: rowIn 0.4s ease both; background: #ffffff; }
+        tbody tr:nth-child(1){animation-delay:.04s} tbody tr:nth-child(2){animation-delay:.08s}
+        tbody tr:nth-child(3){animation-delay:.12s} tbody tr:nth-child(4){animation-delay:.16s}
+        tbody tr:nth-child(5){animation-delay:.2s}
+        @keyframes rowIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
+        tbody tr:hover { background: var(--surface2); }
+
+        .rank { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border-md); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+        .rank.top { background: var(--accent-glow); border-color: rgba(16,185,129,0.3); color: var(--accent); }
+        .fname { font-weight: 600; color: var(--text); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+        .fsub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+        .eml { color: var(--accent2); text-decoration: none; font-size: 0.8rem; font-weight: 500; }
+        .eml:hover { text-decoration: underline; }
+        .ph { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+        .spills { display: flex; flex-wrap: wrap; gap: 5px; max-width: 220px; }
+        .sp { background: var(--surface); border: 1px solid var(--border-md); border-radius: 100px; padding: 0.2rem 0.6rem; font-size: 0.7rem; font-weight: 500; color: var(--text); box-shadow: var(--shadow-sm); }
+        .mp { font-size: 0.7rem; font-weight: 600; color: var(--muted); padding-top: 2px; }
+        .sv { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; }
+        .sbar { height: 5px; border-radius: 3px; background: var(--surface3); overflow: hidden; width: 70px; margin-top: 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
+        .sbf { height: 100%; border-radius: 3px; transition: width 1.2s ease; }
+
+        /* Status badge */
+        .status-badge { font-size: 0.7rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 100px; border: 1px solid; white-space: nowrap; }
+        .st-shortlisted { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+        .st-accepted    { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+        .st-rejected    { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .st-pending     { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .st-low         { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+        /* Action buttons */
+        .acts { display: flex; gap: 6px; }
+        .act-btn { border: none; border-radius: 7px; padding: 6px 10px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; box-shadow: var(--shadow-sm); }
+        .act-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-accept { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .btn-accept:hover { background: #10b981; color: white; border-color: #10b981; }
+        .btn-reject { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .btn-reject:hover { background: #ef4444; color: white; border-color: #ef4444; }
+        .btn-delete { background: var(--surface); color: var(--muted); border: 1px solid var(--border-md); }
+        .btn-delete:hover { background: var(--surface2); color: var(--text); }
+
+        .empty { text-align: center; padding: 4rem 2rem; }
+        .empty-i { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; filter: grayscale(1); }
+        .empty h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text); }
+        .empty p { font-size: 0.88rem; color: var(--muted); }
+
+        /* Pagination */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 1.25rem; border-top: 1px solid var(--border); background: #ffffff; }
+        .pg-btn { background: var(--surface); border: 1px solid var(--border-md); color: var(--text); padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 500; text-decoration: none; transition: all 0.15s; box-shadow: var(--shadow-sm); }
+        .pg-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .pg-btn.active { background: var(--text); border-color: var(--text); color: var(--surface); }
+
+        @media(max-width:900px){ .chart-row{grid-template-columns:1fr 1fr} .chart-row .chart-card:last-child{grid-column:span 2} }
+        @media(max-width:768px){ .sidebar{display:none} .content{padding:1.25rem} .topbar{padding:0 1.25rem} .sbar{display:none} .spills{max-width:100px} .chart-row{grid-template-columns:1fr} .chart-row .chart-card:last-child{grid-column:span 1} }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <a href="/" class="s-logo"><div class="pip"></div>RecruitAI</a>
+
+    <div class="s-sec">Main</div>
+    <a href="/dashboard" class="s-link active"><span class="s-icon">📊</span>Dashboard</a>
+    <a href="/" class="s-link"><span class="s-icon">📄</span>Screen Resume</a>
+
+    <div class="s-sec">Filters</div>
+    <a href="/dashboard?status=Shortlisted" class="s-link"><span class="s-icon">⭐</span>Shortlisted</a>
+    <a href="/dashboard?status=Accepted" class="s-link"><span class="s-icon">✅</span>Accepted</a>
+    <a href="/dashboard?status=Rejected" class="s-link"><span class="s-icon">❌</span>Rejected</a>
+    <a href="/dashboard?status=Pending" class="s-link"><span class="s-icon">⏳</span>Pending</a>
+
+    <div class="s-bottom">
+        <div class="s-badge"><strong>🔒 Secured Session</strong>Logged in as HR Recruiter</div>
+        <a href="/logout" class="s-link"><span class="s-icon">↩</span>Logout</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <div class="tb-l">
+            <h1>Candidate Pipeline</h1>
+            <p>Ranked by semantic ATS match score</p>
+        </div>
+        <div class="tb-r">
+            <form method="GET" action="/dashboard" style="display:contents">
+                <input type="text" class="search" name="q" value="{{ search_query }}" placeholder="Search name, email, skills…">
+                <select class="filter-sel" name="status" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="Shortlisted" {% if status_filter=='Shortlisted' %}selected{% endif %}>Shortlisted</option>
+                    <option value="Accepted"    {% if status_filter=='Accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="Rejected"    {% if status_filter=='Rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="Pending"     {% if status_filter=='Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Low Match"   {% if status_filter=='Low Match' %}selected{% endif %}>Low Match</option>
+                </select>
+            </form>
+            <a href="/" class="cta">+ Screen Resume</a>
+        </div>
+    </div>
+
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="stats">
+            <div class="sc sc1">
+                <div class="sc-accent"></div>
+                <div class="sc-l">Total Screened</div>
+                <div class="sc-v">{{ stats.total }}</div>
+                <div class="sc-s">all candidates</div>
+            </div>
+            <div class="sc sc2">
+                <div class="sc-accent"></div>
+                <div class="sc-l">Shortlisted</div>
+                <div class="sc-v" style="color:var(--accent)">{{ stats.shortlisted }}</div>
+                <div class="sc-s">≥ 75% match</div>
+            </div>
+            <div class="sc sc3">
+                <div class="sc-accent"></div>
+                <div class="sc-l">Accepted</div>
+                <div class="sc-v" style="color:var(--amber)">{{ stats.accepted }}</div>
+                <div class="sc-s">offer sent</div>
+            </div>
+            <div class="sc sc4">
+                <div class="sc-accent"></div>
+                <div class="sc-l">Rejected</div>
+                <div class="sc-v" style="color:var(--red)">{{ stats.rejected }}</div>
+                <div class="sc-s">not selected</div>
+            </div>
+            <div class="sc sc5">
+                <div class="sc-accent"></div>
+                <div class="sc-l">Avg Match</div>
+                <div class="sc-v" style="color:var(--blue)">{{ stats.avg_score }}%</div>
+                <div class="sc-s">across all resumes</div>
+            </div>
+        </div>
+
+        <div class="chart-row">
+            <div class="chart-card">
+                <div class="ch-title">Match Distribution <span class="ch-sub">by score tier</span></div>
+                <canvas id="donutChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="ch-title">Pipeline Status <span class="ch-sub">candidate funnel</span></div>
+                <canvas id="barChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="ch-title">Top Skills Detected <span class="ch-sub">across all resumes</span></div>
+                <div class="skill-bars" id="skillBars">
+                    </div>
+            </div>
+        </div>
+
+        <div class="tcard">
+            <div class="thead-row">
+                <h3>Ranked Candidates</h3>
+                <span>{{ candidates.total }} total · page {{ candidates.page }}/{{ candidates.pages }}</span>
+            </div>
+
+            {% if candidates.items %}
+            <table id="ct">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Candidate</th>
+                        <th>Contact</th>
+                        <th>Role</th>
+                        <th>Skills</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in candidates.items %}
+                    <tr>
+                        <td><div class="rank {% if loop.index <= 3 %}top{% endif %}">{{ (candidates.page - 1) * 20 + loop.index }}</div></td>
+                        <td>
+                            <div class="fname">{{ c.name or 'Unknown' }}</div>
+                            <div class="fsub">{{ c.filename }}</div>
+                        </td>
+                        <td>
+                            <a href="mailto:{{ c.email }}" class="eml">{{ c.email }}</a>
+                            <div class="ph">{{ c.phone }}</div>
+                        </td>
+                        <td style="font-weight:500;color:var(--muted)">{{ c.job_role or '—' }}</td>
+                        <td>
+                            {% set sl = (c.skills or '').split(', ') %}
+                            <div class="spills">
+                                {% for s in sl[:3] %}{% if s %}<span class="sp">{{ s }}</span>{% endif %}{% endfor %}
+                                {% if sl|length > 3 %}<span class="mp">+{{ sl|length - 3 }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="sv" style="color:{% if c.match_score >= 75 %}var(--accent){% elif c.match_score >= 50 %}var(--amber){% else %}var(--red){% endif %}">
+                                {{ c.match_score }}%
+                            </div>
+                            <div class="sbar">
+                                <div class="sbf" data-w="{{ c.match_score }}" style="background:{% if c.match_score >= 75 %}var(--accent){% elif c.match_score >= 50 %}var(--amber){% else %}var(--red){% endif %};width:0"></div>
+                            </div>
+                        </td>
+                        <td>
+                            {% set st = c.status or 'Pending' %}
+                            <span class="status-badge
+                                {% if st == 'Shortlisted' %}st-shortlisted
+                                {% elif st == 'Accepted' %}st-accepted
+                                {% elif st == 'Rejected' %}st-rejected
+                                {% elif st == 'Low Match' %}st-low
+                                {% else %}st-pending{% endif %}">
+                                {{ st }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="acts">
+                                <form method="POST" action="/accept/{{ c.id }}" style="display:inline">
+                                    <button type="submit" class="act-btn btn-accept" title="Accept & Email">✔ Accept</button>
+                                </form>
+                                <form method="POST" action="/reject/{{ c.id }}" style="display:inline">
+                                    <button type="submit" class="act-btn btn-reject" title="Reject" onclick="return confirm('Reject {{ c.name }}?')">✖ Reject</button>
+                                </form>
+                                <form method="POST" action="/delete/{{ c.id }}" style="display:inline">
+                                    <button type="submit" class="act-btn btn-delete" title="Delete" onclick="return confirm('Delete permanently?')">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if candidates.pages > 1 %}
+            <div class="pagination">
+                {% if candidates.has_prev %}
+                    <a href="?page={{ candidates.prev_num }}&status={{ status_filter }}&q={{ search_query }}" class="pg-btn">← Prev</a>
+                {% endif %}
+                {% for p in candidates.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if p %}
+                        <a href="?page={{ p }}&status={{ status_filter }}&q={{ search_query }}" class="pg-btn {% if p == candidates.page %}active{% endif %}">{{ p }}</a>
+                    {% else %}
+                        <span style="color:var(--muted2);padding:0 4px;font-weight:700">…</span>
+                    {% endif %}
+                {% endfor %}
+                {% if candidates.has_next %}
+                    <a href="?page={{ candidates.next_num }}&status={{ status_filter }}&q={{ search_query }}" class="pg-btn">Next →</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="empty">
+                <div class="empty-i">📭</div>
+                <h3>No candidates found</h3>
+                <p>Try adjusting your filters or screen a new resume.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Score bars ──
+window.addEventListener('load', () => {
+    document.querySelectorAll('.sbf').forEach(b => {
+        setTimeout(() => { b.style.width = b.dataset.w + '%'; }, 400);
+    });
+});
+
+// ── Chart data from Jinja ──
+const strong   = {{ stats.shortlisted }};
+const accepted = {{ stats.accepted }};
+const rejected = {{ stats.rejected }};
+const pending  = {{ stats.total }} - strong - accepted - rejected;
+
+// Global Chart Defaults for Light Mode
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+// Donut chart
+new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Strong (≥75%)', 'Medium (50–74%)', 'Low (<50%)'],
+        datasets: [{
+            data: [strong, Math.max(0, pending), Math.max(0, rejected)],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderColor: ['#ffffff', '#ffffff', '#ffffff'], // White borders for light mode
+            borderWidth: 3,
+            hoverOffset: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: {
+            legend: { labels: { color: '#475569', font: { size: 12, weight: '500' }, boxWidth: 12, padding: 14 } }
+        },
+        cutout: '65%',
+    }
+});
+
+// Bar chart
+new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Shortlisted', 'Accepted', 'Rejected', 'Pending'],
+        datasets: [{
+            label: 'Candidates',
+            data: [strong, accepted, rejected, pending],
+            backgroundColor: ['#10b981','#3b82f6','#ef4444','#f59e0b'],
+            borderRadius: 6,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { 
+                ticks: { color: '#64748b', font: { size: 11, weight: '500' } }, 
+                grid: { display: false } 
+            },
+            y: { 
+                ticks: { color: '#64748b', font: { size: 11, weight: '500' }, stepSize: 1 }, 
+                grid: { color: 'rgba(0,0,0,0.05)' } // Subtle dark grid lines
+            }
+        }
+    }
+});
+
+// ── Skill frequency from candidate data ──
+const skillMap = {};
+{% for c in candidates.items %}
+    {% if c.skills %}
+        "{{ c.skills }}".split(', ').forEach(s => {
+            if(s.trim()) skillMap[s.trim()] = (skillMap[s.trim()] || 0) + 1;
+        });
+    {% endif %}
+{% endfor %}
+
+const sorted = Object.entries(skillMap).sort((a,b) => b[1]-a[1]).slice(0, 8);
+const maxCount = sorted[0]?.[1] || 1;
+// Updated vibrant skill bar colors for light mode
+const colors = ['#10b981','#6366f1','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#14b8a6','#f97316'];
+const barsEl = document.getElementById('skillBars');
+if (sorted.length === 0) {
+    barsEl.innerHTML = '<div style="color:var(--muted2);font-size:0.85rem;text-align:center;padding:2rem 0;font-weight:500;">No skill data yet</div>';
+} else {
+    sorted.forEach(([skill, count], i) => {
+        const pct = Math.round((count / maxCount) * 100);
+        barsEl.innerHTML += `
+        <div class="skrow">
+            <span class="sklabel" title="${skill}">${skill}</span>
+            <div class="sktrack"><div class="skfill" data-p="${pct}" style="background:${colors[i%colors.length]};width:0"></div></div>
+            <span class="skcount">${count}</span>
+        </div>`;
+    });
+    setTimeout(() => {
+        document.querySelectorAll('.skfill').forEach(el => { el.style.width = el.dataset.p + '%'; });
+    }, 350);
+}
+</script>
+</body>
+</html>
