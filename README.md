@@ -67,5 +67,11 @@ Open your browser and navigate to `http://127.0.0.1:5000`
 ## 🔒 Security Note
 Never commit your `.env` file containing your API keys or email passwords. The `.gitignore` file is configured to exclude it.
 
+## 👥 Team / Contributors
+
+This project was developed as a group project by:
+- **Aman Kaushal** ([aman23-cmd](https://github.com/aman23-cmd))
+- **Paridhi Varshney** (Collaborator)
+
 ## 📄 License
 This project is open-source and available under the MIT License.
