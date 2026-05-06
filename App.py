@@ -15,11 +15,9 @@ from flask_bcrypt import Bcrypt
 from werkzeug.utils import secure_filename
 import PyPDF2
 import docx
-import spacy
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from sentence_transformers import SentenceTransformer, util
 
 # ─────────────────────────────────────────────
 # LOGGING
@@ -76,10 +74,14 @@ with app.app_context():
 # Lazy-load heavy models once (avoids startup slowdown)
 @lru_cache(maxsize=1)
 def get_nlp():
+    logger.info("Loading spaCy model (en_core_web_sm)...")
+    import spacy
     return spacy.load('en_core_web_sm')
 
 @lru_cache(maxsize=1)
 def get_embedding_model():
+    logger.info("Loading SentenceTransformer model (all-MiniLM-L6-v2)...")
+    from sentence_transformers import SentenceTransformer
     return SentenceTransformer('all-MiniLM-L6-v2')
 
 
@@ -193,6 +195,7 @@ def extract_skills_from_text(text: str) -> list:
 
 
 def calculate_similarity(resume_text: str, job_description: str) -> float:
+    from sentence_transformers import util
     model = get_embedding_model()
     res_emb = model.encode(resume_text, convert_to_tensor=True)
     jd_emb  = model.encode(job_description, convert_to_tensor=True)
@@ -204,16 +207,36 @@ def extract_contact_info(text: str) -> tuple:
     """Return (email, phone) extracted from resume text."""
     text = text.replace("\n", " ").replace("\t", " ")
 
-    email_match = re.search(
-        r'(?<![a-zA-Z0-9._%+\-])[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}',
-        text
+    email = "Not Found"
+
+    # Strategy 1: Look for email after common labels like "Email:", "E-mail ID:" etc.
+    # This is the most reliable because it anchors on the label.
+    labeled = re.search(
+        r'(?:e[\-\s]?mail(?:\s*(?:id|address))?|e[\-\s]?id|mail\s*id)'
+        r'\s*[:;\-\s]\s*'
+        r'([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})',
+        text, re.IGNORECASE
     )
+    if labeled:
+        email = labeled.group(1).strip()
+    else:
+        # Strategy 2: General regex — find anything with @
+        # Note: PDF icon fonts (e.g. ✉) may extract as junk chars prepended
+        # to the email. HR can fix this using the edit button on the dashboard.
+        general = re.search(
+            r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}',
+            text
+        )
+        if general:
+            email = general.group(0).strip()
+
+
+
     phone_match = re.search(
         r'\b(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}\b',
         text
     )
 
-    email = email_match.group(0).strip() if email_match else "Not Found"
     phone = phone_match.group(0).strip() if phone_match else "Not Found"
     return email, phone
 
@@ -508,10 +531,31 @@ def delete_candidate(id):
     return redirect(url_for('hr_dashboard'))
 
 
+@app.route('/update-email/<int:id>', methods=['POST'])
+@login_required
+def update_email(id):
+    """Allow HR to correct a candidate's email from the dashboard."""
+    candidate = Candidate.query.get_or_404(id)
+    new_email = request.form.get('email', '').strip()
+    if new_email:
+        candidate.email = new_email
+        db.session.commit()
+        flash(f'Email updated for {candidate.name}.', 'success')
+    else:
+        flash('Email cannot be empty.', 'danger')
+    return redirect(url_for('hr_dashboard'))
+
+
 @app.route('/accept/<int:id>', methods=['POST'])
 @login_required
 def accept_candidate(id):
     candidate = Candidate.query.get_or_404(id)
+
+    # Use email override from form if provided (HR may have corrected it)
+    email_to_use = request.form.get('email', '').strip() or candidate.email
+    if email_to_use and email_to_use != candidate.email:
+        candidate.email = email_to_use
+        db.session.commit()
 
     if not candidate.email or candidate.email == "Not Found":
         flash('Candidate email not found — cannot send acceptance email.', 'danger')

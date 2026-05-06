@@ -312,7 +312,15 @@
                             <div class="fsub">{{ c.filename }}</div>
                         </td>
                         <td>
-                            <a href="mailto:{{ c.email }}" class="eml">{{ c.email }}</a>
+                            <div class="email-display" id="email-display-{{ c.id }}">
+                                <a href="mailto:{{ c.email }}" class="eml">{{ c.email }}</a>
+                                <button type="button" class="act-btn btn-delete" style="padding:3px 6px;font-size:0.65rem;margin-left:4px" onclick="editEmail({{ c.id }}, '{{ c.email }}')" title="Edit email">✏️</button>
+                            </div>
+                            <form method="POST" action="/update-email/{{ c.id }}" id="email-form-{{ c.id }}" style="display:none" class="email-edit-form">
+                                <input type="email" name="email" value="{{ c.email }}" style="background:rgba(0,0,0,0.3);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--text-main);font-size:0.8rem;width:180px;outline:none" required>
+                                <button type="submit" class="act-btn btn-accept" style="padding:3px 8px;font-size:0.65rem">Save</button>
+                                <button type="button" class="act-btn btn-delete" style="padding:3px 8px;font-size:0.65rem" onclick="cancelEdit({{ c.id }})">✕</button>
+                            </form>
                             <div class="ph">{{ c.phone }}</div>
                         </td>
                         <td style="font-weight:500;color:var(--muted)">{{ c.job_role or '—' }}</td>
@@ -396,6 +404,20 @@ window.addEventListener('load', () => {
         setTimeout(() => { b.style.width = b.dataset.w + '%'; }, 400);
     });
 });
+
+// ── Inline email editing ──
+function editEmail(id, currentEmail) {
+    document.getElementById('email-display-' + id).style.display = 'none';
+    const form = document.getElementById('email-form-' + id);
+    form.style.display = 'flex';
+    form.style.gap = '4px';
+    form.style.alignItems = 'center';
+    form.querySelector('input').focus();
+}
+function cancelEdit(id) {
+    document.getElementById('email-display-' + id).style.display = 'flex';
+    document.getElementById('email-form-' + id).style.display = 'none';
+}
 
 // ── Chart data from Jinja ──
 const strong   = {{ stats.shortlisted }};

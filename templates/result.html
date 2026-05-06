@@ -348,8 +348,8 @@ async function callAI(userMsg) {
 function appendMsg(text, role) {
     const box = document.getElementById('chatbox');
     const div = document.createElement('div');
-    div.className = \`bubble bubble-\${role}\`;
-    div.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
+    div.className = `bubble bubble-${role}`;
+    div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
 }
