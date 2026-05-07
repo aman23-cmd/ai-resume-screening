@@ -19,3 +19,5 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+        key: DATABASE_URL
+        value: postgresql://postgres.lhyzjkegabkthrjzahpq:yxJ9bF637uKSrQaf@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
