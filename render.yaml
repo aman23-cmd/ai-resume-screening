@@ -19,5 +19,10 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
-        key: DATABASE_URL
-        value: postgresql://postgres.lhyzjkegabkthrjzahpq:yxJ9bF637uKSrQaf@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+      - key: DATABASE_URL
+        value: postgresql://recruit_ai_db_bhv6_user:0UsRuDz4RBoiMOXmhEQmrdW87G5XtE8C@dpg-d7u1d0favr4c73d6tpt0-a/recruit_ai_db_bhv6
+
+databases:
+  - name: recruit-ai-db
+    region: oregon
+    plan: free
